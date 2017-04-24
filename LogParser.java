@@ -13,7 +13,6 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
-
 public class LogParser implements IPQuery
 {
 
@@ -36,6 +35,10 @@ public class LogParser implements IPQuery
         return getUniqueIPsSet(after, before);
     }
 
+    /**
+     * Возвращяет IP адресса для указанного пользователя
+     * @param user
+     */
     @Override
     public Set<String> getIPsForUser(String user, Date after, Date before)
     {
@@ -61,7 +64,7 @@ public class LogParser implements IPQuery
         for (String line : getLinesList())
         {
             String[] parts = line.split("\\t");
-
+            // Если событие равна четвертой части строки
             if (event.toString().equals(parts[3].split(" ")[0]))
             {
                 addIP(after, before, IPsForEvent, parts);
@@ -87,6 +90,10 @@ public class LogParser implements IPQuery
         return IPsForEvent;
     }
 
+    /**
+     * Метод проходит по всем строкам log файлов и добавляет их в списко строк
+     * @return список строк
+     */
     private List<String> getLinesList()
     {
         String[] files = logDir.toFile().list(new FilenameFilter()
@@ -113,6 +120,11 @@ public class LogParser implements IPQuery
         return lines;
     }
 
+    /**
+     * @param after - Дата фильтрации от
+     * @param before - Дата фильтрации до
+     * @return Возвращяет уникальные IP адресса фильтрация от after по before
+     */
     private Set<String> getUniqueIPsSet(Date after, Date before)
     {
         Set<String> uniqueIPs = new HashSet<>();
@@ -126,12 +138,19 @@ public class LogParser implements IPQuery
         return uniqueIPs;
     }
 
+    /**
+     * @param after - Дата фильтрации от
+     * @param before - Дата фильтрации до
+     * @param IPs - Множество IP адрессов
+     * @param parts - Разделенная часть каждой строки в log, т.е. каждую строку в лог файле делим на части
+     */
     private void addIP(Date after, Date before, Set<String> IPs, String[] parts)
     {
         DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss", Locale.ENGLISH);
         long partDate = 0;
         try
         {
+            // Lines 3rd element is Date "dd.MM.yyyy HH:mm:ss"
             partDate = dateFormat.parse(parts[2]).getTime();
         }
         catch (ParseException e)
@@ -139,22 +158,29 @@ public class LogParser implements IPQuery
             e.printStackTrace();
         }
 
+        // Если даты не указаны то добавить все IP адресса
         if (after == null && before == null)
         {
             IPs.add(parts[0]);
-        } else if (after == null)
+        }
+        // Если начальная дата не указана (after) то добавить все IP до указанной даты (befor)
+        else if (after == null)
         {
             if (partDate <= before.getTime())
             {
                 IPs.add(parts[0]);
             }
-        } else if (before == null)
+        }
+        // Если конечная дата не указана (after) то добавить все IP с начальной даты (after)
+        else if (before == null)
         {
             if (partDate >= after.getTime())
             {
                 IPs.add(parts[0]);
             }
-        } else {
+        }
+        // Если указаны даты от до. То фильтровать IP перед добавлением
+        else {
             if (partDate >= after.getTime() && partDate <= before.getTime())
             {
                 IPs.add(parts[0]);
